@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA-KSEP // Cyber File Viewer & Document Reader</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: JetBrains Mono & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            bg: '#08090b',
+                            card: '#0e1117',
+                            cardBorder: '#1c2230',
+                            gold: '#d4af37',
+                            goldHover: '#f5c518',
+                            emerald: '#00e676',
+                            emeraldDark: '#053921',
+                            amber: '#ffb700',
+                            dimText: '#8b949e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS for Grid lines and styling -->
+    <style>
+        body {
+            background-color: #08090b;
+            color: #e6edf3;
+            font-family: 'JetBrains Mono', monospace;
+            background-image: 
+                linear-gradient(rgba(20, 26, 38, 0.25) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 26, 38, 0.25) 1px, transparent 1px);
+            background-size: 24px 24px;
+            background-position: -1px -1px;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #08090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4af37;
+        }
+
+        .gold-border-glow {
+            box-shadow: 0 0 12px rgba(212, 175, 55, 0.15);
+        }
+        
+        .emerald-border-glow {
+            box-shadow: 0 0 12px rgba(0, 230, 118, 0.15);
+        }
+
+        /* Markdown styling inside reader modal */
+        .markdown-body h1 { font-size: 1.75rem; font-weight: 700; color: #d4af37; margin-bottom: 1rem; border-bottom: 1px solid #1c2230; padding-bottom: 0.5rem; }
+        .markdown-body h2 { font-size: 1.35rem; font-weight: 600; color: #00e676; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .markdown-body h3 { font-size: 1.1rem; font-weight: 600; color: #e6edf3; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .markdown-body p { margin-bottom: 1rem; line-height: 1.6; color: #c9d1d9; font-family: 'Inter', sans-serif; }
+        .markdown-body ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; font-family: 'Inter', sans-serif; }
+        .markdown-body li { margin-bottom: 0.25rem; color: #c9d1d9; }
+        .markdown-body code { background: #161b22; padding: 0.2rem 0.4rem; border-radius: 4px; color: #ffb700; font-size: 0.9em; }
+        .markdown-body pre { background: #11141a; padding: 1rem; border-radius: 6px; border: 1px solid #1c2230; overflow-x: auto; margin-bottom: 1rem; }
+        .markdown-body blockquote { border-left: 3px solid #d4af37; padding-left: 1rem; color: #8b949e; margin-bottom: 1rem; font-style: italic; }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .markdown-body th, .markdown-body td { border: 1px solid #1c2230; padding: 0.5rem 0.75rem; text-align: left; }
+        .markdown-body th { background: #11141a; color: #d4af37; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-sm antialiased selection:bg-cyber-gold selection:text-black">
+
+    <!-- TOP STATUS INFOBAR -->
+    <div class="w-full bg-[#050608] border-b border-[#181d28] px-4 py-1.5 text-[11px] text-cyber-dimText flex flex-wrap justify-between items-center font-mono">
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center text-cyber-emerald">
+                <span class="h-2 w-2 rounded-full bg-cyber-emerald animate-pulse mr-1.5"></span>
+                LOCAL INSTANCE ONLINE
+            </span>
+            <span class="text-[#2d3748]">|</span>
+            <span>STORAGE: <span class="text-gray-300">LOCAL DEVICE DB</span></span>
+            <span class="text-[#2d3748]">|</span>
+            <span class="hidden sm:inline text-cyber-amber">REPO: GITHUB PAGES ACTIVE</span>
+        </div>
+        <div class="flex items-center gap-2 text-gray-400">
+            <span>AUTHOR: <strong class="text-cyber-gold font-semibold">Petrus Krishna S. 18226026</strong></span>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTAINER -->
+    <div class="max-w-7xl w-full mx-auto px-4 py-6 flex-grow flex flex-col gap-6">
+
+        <!-- HEADER SECTION WITH METRICS -->
+        <header class="flex flex-col lg:flex-row gap-4 justify-between items-stretch">
+            
+            <!-- BRAND / LOGO BLOCK -->
+            <div class="flex items-center gap-3 bg-cyber-card border border-cyber-cardBorder p-3.5 rounded-lg">
+                <div class="bg-cyber-gold text-black font-bold text-2xl px-3 py-2 rounded flex items-center justify-center font-mono tracking-tighter">
+                    CA
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg font-bold text-white tracking-wider">KSEP Assignments Drafts Data Storage</h1>
+                        <span class="text-[10px] uppercase font-bold tracking-widest bg-cyber-gold/10 text-cyber-gold border border-cyber-gold/30 px-2 py-0.5 rounded">
+                            FILE VIEWER
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- METRIC COUNTERS (DESKTOP/TABLET) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-cyber-card border border-cyber-cardBorder p-3 rounded-lg flex flex-col justify-center items-center min-w-[110px]">
+                    <span class="text-[10px] text-cyber-dimText tracking-wider uppercase font-semibold">FILES TOTAL</span>
+                    <span id="stat-total-files" class="text-xl font-bold text-cyber-gold">0</span>
+                </div>
+                <div class="bg-cyber-card border border-cyber-cardBorder p-3 rounded-lg flex flex-col justify-center items-center min-w-[110px]">
+                    <span class="text-[10px] text-cyber-dimText tracking-wider uppercase font-semibold">MARKED DONE</span>
+                    <span id="stat-completed-files" class="text-xl font-bold text-cyber-emerald">0</span>
+                </div>
+                <div class="bg-cyber-card border border-cyber-cardBorder p-3 rounded-lg flex flex-col justify-center items-center min-w-[110px]">
+                    <span class="text-[10px] text-cyber-dimText tracking-wider uppercase font-semibold">CATEGORIES</span>
+                    <span id="stat-categories" class="text-xl font-bold text-white">0</span>
+                </div>
+                <div class="bg-cyber-card border border-cyber-cardBorder p-3 rounded-lg flex flex-col justify-center items-center min-w-[110px]">
+                    <span class="text-[10px] text-cyber-dimText tracking-wider uppercase font-semibold">LAST UPDATED</span>
+                    <span class="text-xs font-semibold text-cyber-amber mt-1">Oct 2026</span>
+                </div>
+            </div>
+
+            <!-- NAV QUICK SWITCH BUTTONS -->
+            <div class="bg-cyber-card border border-cyber-cardBorder p-1.5 rounded-lg flex items-center gap-1 self-start lg:self-center">
+                <button class="bg-cyber-gold text-black font-semibold text-xs px-3.5 py-2 rounded flex items-center gap-1.5 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    01 // DOCUMENTS
+                </button>
+                <button onclick="resetProgress()" title="Reset saved completion status" class="hover:bg-red-500/10 text-gray-400 hover:text-red-400 font-medium text-xs px-2.5 py-2 rounded transition flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTROLS & SEARCH BAR SECTION -->
+        <section class="bg-cyber-card border border-cyber-cardBorder p-5 rounded-lg space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        DOCUMENT & FILE READER <span class="text-lg">👻</span>
+                    </h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-xs text-cyber-gold font-medium" id="progress-text">PROGRESS STATUS: 0/0 DONE</span>
+                    </div>
+                </div>
+
+                <!-- SEARCH BAR -->
+                <div class="relative min-w-[280px] md:min-w-[360px]">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-cyber-dimText">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <input type="text" id="search-input" placeholder="SEARCH FILES, TAGS, TAKEAWAYS..." 
+                           class="w-full bg-[#08090b] border border-cyber-cardBorder text-xs text-white rounded-md pl-9 pr-4 py-2.5 focus:outline-none focus:border-cyber-gold tracking-wide transition placeholder-cyber-dimText">
+                </div>
+            </div>
+
+            <!-- PROGRESS BAR VISUAL -->
+            <div class="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-cyber-cardBorder">
+                <div id="progress-bar-fill" class="bg-gradient-to-r from-cyber-gold to-cyber-emerald h-full w-0 transition-all duration-500"></div>
+            </div>
+
+            <!-- CATEGORY FILTER PILLS -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs" id="category-filters">
+                <!-- Dynamically generated filters -->
+            </div>
+        </section>
+
+        <!-- FILE GRID DISPLAY -->
+        <main>
+            <div id="file-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- File Cards Inserted via JavaScript -->
+            </div>
+
+            <!-- EMPTY SEARCH RESULTS STATE -->
+            <div id="empty-state" class="hidden text-center py-16 bg-cyber-card/50 border border-dashed border-cyber-cardBorder rounded-lg">
+                <p class="text-cyber-dimText text-sm">NO FILES MATCHED YOUR SEARCH QUERY OR FILTER.</p>
+                <button onclick="resetFilters()" class="mt-3 text-xs text-cyber-gold hover:underline">Clear Search & Filters</button>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- DOCUMENT READER MODAL -->
+    <div id="reader-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex flex-col justify-center items-center p-2 sm:p-6">
+        <div class="w-full h-full max-w-6xl bg-cyber-card border border-cyber-cardBorder rounded-lg flex flex-col overflow-hidden shadow-2xl">
+            
+            <!-- MODAL HEADER -->
+            <div class="bg-[#08090b] border-b border-cyber-cardBorder px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <span id="modal-tag" class="text-xs px-2 py-0.5 rounded font-bold bg-cyber-gold/20 text-cyber-gold border border-cyber-gold/30 shrink-0">
+                        HB 1
+                    </span>
+                    <h3 id="modal-title" class="text-sm font-bold text-white truncate font-sans">
+                        Document Title Preview
+                    </h3>
+                    <span id="modal-type-badge" class="hidden sm:inline-block text-[10px] px-2 py-0.5 bg-gray-800 text-gray-300 rounded uppercase">
+                        PDF
+                    </span>
+                </div>
+
+                <!-- MODAL ACTIONS -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <a id="modal-download-btn" href="#" target="_blank" download class="text-xs bg-cyber-cardBorder hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded flex items-center gap-1 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span class="hidden sm:inline">DOWNLOAD / DIRECT LINK</span>
+                    </a>
+                    <button onclick="closeReaderModal()" class="text-xs bg-red-950/80 hover:bg-red-900 border border-red-700/50 text-red-200 px-3 py-1.5 rounded font-bold transition flex items-center gap-1">
+                        ✕ CLOSE
+                    </button>
+                </div>
+            </div>
+
+            <!-- MODAL CONTENT AREA -->
+            <div id="modal-content" class="flex-grow overflow-y-auto p-4 sm:p-6 bg-[#0a0c10] font-sans">
+                <!-- Embedded Viewer Content dynamically injected here -->
+            </div>
+
+            <!-- MODAL FOOTER -->
+            <div class="bg-[#08090b] border-t border-cyber-cardBorder px-4 py-2 flex justify-between items-center text-xs text-cyber-dimText font-mono">
+                <span id="modal-filepath" class="truncate max-w-md text-gray-500">./files/sample.pdf</span>
+                <span>PRESS ESC TO CLOSE</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-8 border-t border-cyber-cardBorder bg-[#050608] py-4 text-center text-xs text-cyber-dimText">
+        <p>CA-KSEP ACADEMIC ARCHIVE SYSTEM // GITHUB PAGES COMPATIBLE</p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /**
+         * =========================================================================
+         * FILE DATABASE CONFIGURATION (EDIT THIS ARRAY TO ADD YOUR GITHUB FILES)
+         * =========================================================================
+         */
+        const FILE_DATABASE = [
+            {
+                id: "img-pdf-addon-demo",
+                code: "DOC 1",
+                title: "ASSIGNMENT DRAFT 1: FINANCIAL SCHEMATIC ARCHITECTURE",
+                category: "Visual Drafts",
+                type: "image-pdf-addon",
+                filePath: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop",
+                pdfPath: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+                readTime: "10 mins",
+                description: "Draft tugas rancangan skema finansial KSEP. Dilengkapi dengan dual image & PDF viewer addon mode.",
+                takeaways: [
+                    "Bagan aliran arus kas dan pemodelan keuangan.",
+                    "Disertai lampiran dokumen PDF resmi untuk verifikasi.",
+                    "Mendukung switch modal tampilan antara mode Skema Gambar & Mode PDF Viewer."
+                ]
+            },
+            {
+                id: "hb-1",
+                code: "HB 1",
+                title: "HANDBOOK 1 SUMMARY: DASAR KEUANGAN DAN INVESTASI LENGKAP",
+                category: "Handbooks",
+                type: "markdown",
+                filePath: "./files/handbook1_summary.md",
+                readTime: "25 mins",
+                description: "Dokumen asli materi Handbook Day 1 mengenai Sejarah Uang, Personal Finance, dan Investasi.",
+                takeaways: [
+                    "Evolusi uang didasari oleh kepercayaan (trust).",
+                    "Piramida keuangan memprioritaskan Keamanan sebelum Kenyamanan dan Distribusi Kekayaan.",
+                    "Investasi bertujuan melawan inflasi untuk mencapai kebebasan finansial.",
+                    "Penting untuk menyesuaikan instrumen investasi dengan Profil Risiko."
+                ],
+                content: `# HANDBOOK 1 SUMMARY: DASAR KEUANGAN DAN INVESTASI LENGKAP\n\n## 1. Evolusi & Sejarah Uang\nUang diciptakan sebagai solusi dari kelemahan sistem **barter** (*double coincidence of wants*).\n\n- **Barter Era**: Penukaran barang dengan barang.\n- **Commodity Money**: Penggunaan kerang, emas, dan perak sebagai alat tukar.\n- **Fiat Money**: Uang kertas modern yang diterbitkan oleh Bank Sentral.`
+            },
+            {
+                id: "hb-2",
+                code: "HB 2",
+                title: "HANDBOOK 2: ANALISIS PASAR MODAL & INSTRUMEN KEUANGAN",
+                category: "Handbooks",
+                type: "markdown",
+                filePath: "./files/handbook2_pasar_modal.md",
+                readTime: "30 mins",
+                description: "Pengenalan komprehensif mengenai struktur Pasar Modal Indonesia, Mekanisme Perdagangan Saham, dan Analisis Teknikal dasar.",
+                takeaways: [
+                    "Struktur OJK, BEI, KSEI, dan KPEI dalam menjaga ekosistem pasar.",
+                    "Perbedaan Fundamental Analysis (Top-Down) vs Technical Analysis.",
+                    "Mekanisme Bid-Offer dan Pembentukan Harga Saham."
+                ],
+                content: `# HANDBOOK 2: ANALISIS PASAR MODAL & INSTRUMEN KEUANGAN\n\n- **OJK**: Mengawasi seluruh kegiatan sektor jasa keuangan.\n- **BEI**: Menyediakan sarana perdagangan efek.`
+            }
+        ];
+
+        // LOCAL STORAGE STATE MANAGEMENT
+        let completedFiles = JSON.parse(localStorage.getItem('CA_COMPLETED_FILES') || '[]');
+        let activeCategory = 'ALL';
+        let searchQuery = '';
+
+        // DOM ELEMENTS
+        const fileGrid = document.getElementById('file-grid');
+        const emptyState = document.getElementById('empty-state');
+        const searchInput = document.getElementById('search-input');
+        const categoryFiltersContainer = document.getElementById('category-filters');
+        
+        // METRIC ELEMENTS
+        const statTotal = document.getElementById('stat-total-files');
+        const statCompleted = document.getElementById('stat-completed-files');
+        const statCategories = document.getElementById('stat-categories');
+        const progressText = document.getElementById('progress-text');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCategoryFilters();
+            renderDashboard();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase().trim();
+                renderDashboard();
+            });
+
+            // Close modal with ESC key
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeReaderModal();
+                }
+            });
+        }
+
+        // RENDER CATEGORY PILLS
+        function renderCategoryFilters() {
+            const categories = ['ALL', ...new Set(FILE_DATABASE.map(f => f.category))];
+            statCategories.textContent = categories.length - 1;
+
+            categoryFiltersContainer.innerHTML = categories.map(cat => {
+                const isActive = activeCategory === cat;
+                return `
+                    <button onclick="setCategory('${cat}')" class="px-3 py-1.5 rounded font-mono transition text-xs whitespace-nowrap ${
+                        isActive 
+                            ? 'bg-cyber-gold text-black font-bold' 
+                            : 'bg-[#08090b] text-cyber-dimText border border-cyber-cardBorder hover:text-white hover:border-gray-600'
+                    }">
+                        // ${cat.toUpperCase()}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function setCategory(cat) {
+            activeCategory = cat;
+            renderCategoryFilters();
+            renderDashboard();
+        }
+
+        function resetFilters() {
+            searchQuery = '';
+            searchInput.value = '';
+            activeCategory = 'ALL';
+            renderCategoryFilters();
+            renderDashboard();
+        }
+
+        // TOGGLE DONE STATUS (PERSISTED IN LOCALSTORAGE)
+        function toggleDone(id, event) {
+            if (event) event.stopPropagation();
+            if (completedFiles.includes(id)) {
+                completedFiles = completedFiles.filter(item => item !== id);
+            } else {
+                completedFiles.push(id);
+            }
+            localStorage.setItem('CA_COMPLETED_FILES', JSON.stringify(completedFiles));
+            renderDashboard();
+        }
+
+        function resetProgress() {
+            if (confirm("Are you sure you want to reset all completed file indicators?")) {
+                completedFiles = [];
+                localStorage.setItem('CA_COMPLETED_FILES', JSON.stringify([]));
+                renderDashboard();
+            }
+        }
+
+        // MAIN RENDER DASHBOARD FUNCTION
+        function renderDashboard() {
+            // Update Stats Metrics
+            const totalCount = FILE_DATABASE.length;
+            const completedCount = completedFiles.length;
+            statTotal.textContent = totalCount;
+            statCompleted.textContent = completedCount;
+            
+            const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+            progressText.textContent = `PROGRESS STATUS: ${completedCount}/${totalCount} DONE (${pct}%)`;
+            progressBarFill.style.width = `${pct}%`;
+
+            // Filter Files
+            const filtered = FILE_DATABASE.filter(file => {
+                const matchesCategory = activeCategory === 'ALL' || file.category === activeCategory;
+                const matchesSearch = !searchQuery || 
+                    file.title.toLowerCase().includes(searchQuery) ||
+                    file.description.toLowerCase().includes(searchQuery) ||
+                    file.code.toLowerCase().includes(searchQuery) ||
+                    file.takeaways.some(t => t.toLowerCase().includes(searchQuery));
+                
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                fileGrid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Render Cards
+            fileGrid.innerHTML = filtered.map(file => {
+                const isDone = completedFiles.includes(file.id);
+                return `
+                    <div class="bg-cyber-card border ${isDone ? 'border-cyber-emerald/40 emerald-border-glow' : 'border-cyber-cardBorder'} p-5 rounded-lg flex flex-col justify-between transition-all hover:border-cyber-gold/50">
+                        <div>
+                            <!-- CARD HEADER BADGES -->
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-[#181e2a] text-cyber-gold border border-cyber-gold/30 px-2.5 py-0.5 rounded text-xs font-bold font-mono">
+                                        ${file.code}
+                                    </span>
+                                    ${file.type === 'image-pdf-addon' ? `<span class="bg-cyber-gold/20 text-cyber-gold border border-cyber-gold/30 px-2 py-0.5 rounded text-[10px] font-bold">IMAGE + PDF ADDON</span>` : ''}
+                                </div>
+                                <span class="text-xs text-cyber-dimText font-mono">${file.readTime}</span>
+                            </div>
+
+                            <!-- TITLE & DESCRIPTION -->
+                            <h3 class="text-base font-bold text-white mb-2 leading-snug font-sans hover:text-cyber-gold transition cursor-pointer" onclick="openReaderModal('${file.id}')">
+                                ${file.title}
+                            </h3>
+                            <p class="text-xs text-gray-400 mb-4 line-clamp-2 leading-relaxed font-sans">
+                                ${file.description}
+                            </p>
+
+                            <!-- KEY TAKEAWAYS NESTED BOX -->
+                            <div class="bg-[#08090b] border border-cyber-cardBorder rounded p-3 mb-5">
+                                <span class="text-[10px] font-bold text-cyber-gold uppercase tracking-wider block mb-2 font-mono">
+                                    KEY MODULE TAKEAWAYS:
+                                </span>
+                                <ul class="space-y-1.5 text-xs text-gray-300 font-sans">
+                                    ${file.takeaways.map(point => `
+                                        <li class="flex items-start gap-2">
+                                            <span class="text-cyber-gold text-xs leading-none mt-1">•</span>
+                                            <span class="leading-normal">${point}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- CARD FOOTER ACTIONS -->
+                        <div class="flex items-center justify-between pt-3 border-t border-cyber-cardBorder/60 gap-2 font-mono">
+                            <button onclick="toggleDone('${file.id}', event)" class="px-3 py-1.5 rounded text-xs transition flex items-center gap-1.5 font-semibold ${
+                                isDone 
+                                    ? 'bg-cyber-emerald/10 text-cyber-emerald border border-cyber-emerald/30 hover:bg-cyber-emerald/20' 
+                                    : 'bg-[#121620] text-gray-300 border border-cyber-cardBorder hover:border-gray-500 hover:text-white'
+                            }">
+                                ${isDone ? '✓ MARKED DONE' : '+ MARK AS DONE'}
+                            </button>
+
+                            <button onclick="openReaderModal('${file.id}')" class="bg-cyber-card border border-cyber-gold/40 text-cyber-gold hover:bg-cyber-gold hover:text-black px-3.5 py-1.5 rounded text-xs font-bold transition flex items-center gap-1">
+                                OPEN READER →
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // OPEN READER MODAL FUNCTION
+        function openReaderModal(id) {
+            const file = FILE_DATABASE.find(f => f.id === id);
+            if (!file) return;
+
+            document.getElementById('modal-tag').textContent = file.code;
+            document.getElementById('modal-title').textContent = file.title;
+            document.getElementById('modal-filepath').textContent = file.filePath;
+            
+            const modalTypeBadge = document.getElementById('modal-type-badge');
+            modalTypeBadge.textContent = file.type.toUpperCase();
+
+            const downloadBtn = document.getElementById('modal-download-btn');
+            downloadBtn.href = file.filePath;
+
+            const modalContent = document.getElementById('modal-content');
+
+            if (file.type === 'image-pdf-addon') {
+                modalContent.innerHTML = `
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center justify-center gap-2 border-b border-cyber-cardBorder pb-3">
+                            <button id="addon-btn-img" onclick="switchAddonView('img', '${file.filePath}')" class="bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono">
+                                📷 IMAGE DRAFT SCHEMATIC
+                            </button>
+                            <button id="addon-btn-pdf" onclick="switchAddonView('pdf', '${file.pdfPath}')" class="bg-[#181e2a] hover:bg-gray-800 text-gray-300 px-3 py-1.5 rounded text-xs font-bold font-mono border border-cyber-cardBorder">
+                                📄 PDF DOCUMENT VIEW
+                            </button>
+                        </div>
+                        <div id="addon-view-container" class="flex justify-center items-center min-h-[500px]">
+                            <img src="${file.filePath}" alt="${file.title}" class="max-w-full max-h-[65vh] rounded border border-cyber-cardBorder shadow-lg object-contain">
+                        </div>
+                    </div>
+                `;
+            }
+            else if (file.type === 'markdown') {
+                const markdownText = file.content || `# ${file.title}\n\n*File path: ${file.filePath}*\n\n${file.description}`;
+                modalContent.innerHTML = `<div class="markdown-body max-w-4xl mx-auto py-2">${marked.parse(markdownText)}</div>`;
+            } 
+            else if (file.type === 'pdf') {
+                modalContent.innerHTML = `
+                    <div class="w-full h-full min-h-[550px] flex flex-col">
+                        <iframe src="${file.filePath}" class="w-full h-full flex-grow rounded border border-cyber-cardBorder bg-white" frameborder="0">
+                            <p>Your browser does not support inline PDFs. <a href="${file.filePath}" target="_blank" class="text-cyber-gold underline">Click here to download PDF</a></p>
+                        </iframe>
+                    </div>
+                `;
+            }
+            else if (file.type === 'code') {
+                const codeText = file.content || `// Code file at: ${file.filePath}`;
+                modalContent.innerHTML = `
+                    <div class="max-w-4xl mx-auto">
+                        <pre class="text-xs font-mono text-green-400 bg-black/80 p-4 rounded border border-cyber-cardBorder overflow-x-auto"><code>${escapeHtml(codeText)}</code></pre>
+                    </div>
+                `;
+            }
+            else if (file.type === 'image') {
+                modalContent.innerHTML = `
+                    <div class="flex justify-center items-center h-full p-4">
+                        <img src="${file.filePath}" alt="${file.title}" class="max-w-full max-h-[70vh] rounded border border-cyber-cardBorder shadow-lg object-contain">
+                    </div>
+                `;
+            }
+            else {
+                modalContent.innerHTML = `
+                    <div class="text-center py-12 text-cyber-dimText font-mono">
+                        <p>PREVIEW NOT AVAILABLE FOR THIS FILE TYPE.</p>
+                        <a href="${file.filePath}" target="_blank" class="text-cyber-gold underline text-xs mt-2 inline-block">OPEN DIRECT FILE URL</a>
+                    </div>
+                `;
+            }
+
+            document.getElementById('reader-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeReaderModal() {
+            document.getElementById('reader-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function switchAddonView(type, url) {
+            const container = document.getElementById('addon-view-container');
+            const btnImg = document.getElementById('addon-btn-img');
+            const btnPdf = document.getElementById('addon-btn-pdf');
+
+            if (type === 'img') {
+                btnImg.className = "bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono";
+                btnPdf.className = "bg-[#181e2a] hover:bg-gray-800 text-gray-300 px-3 py-1.5 rounded text-xs font-bold font-mono border border-cyber-cardBorder";
+                container.innerHTML = `<img src="${url}" class="max-w-full max-h-[65vh] rounded border border-cyber-cardBorder shadow-lg object-contain">`;
+            } else {
+                btnPdf.className = "bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono";
+                btnImg.className = "bg-[#181e2a] hover:bg-gray-800 text-gray-300 px-3 py-1.5 rounded text-xs font-bold font-mono border border-cyber-cardBorder";
+                container.innerHTML = `
+                    <iframe src="${url}" class="w-full h-[550px] rounded border border-cyber-cardBorder bg-white" frameborder="0"></iframe>
+                `;
+            }
+        }
+
+        // Helper function to escape HTML string for safe display
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
