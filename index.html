@@ -494,11 +494,11 @@
                 modalContent.innerHTML = `
                     <div class="flex flex-col gap-4">
                         <div class="flex items-center justify-center gap-2 border-b border-cyber-cardBorder pb-3">
-                            <button id="addon-btn-img" onclick="switchAddonView('img', '${file.filePath}')" class="bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono">
-                                📷 IMAGE DRAFT SCHEMATIC
-                            </button>
                             <button id="addon-btn-pdf" onclick="switchAddonView('pdf', '${file.pdfPath}')" class="bg-[#181e2a] hover:bg-gray-800 text-gray-300 px-3 py-1.5 rounded text-xs font-bold font-mono border border-cyber-cardBorder">
                                 📄 PDF DOCUMENT VIEW
+                            </button>
+                            <button id="addon-btn-img" onclick="switchAddonView('img', '${file.filePath}')" class="bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono">
+                                📷 IMAGE DRAFT SCHEMATIC
                             </button>
                         </div>
                         <div id="addon-view-container" class="flex justify-center items-center min-h-[500px]">
