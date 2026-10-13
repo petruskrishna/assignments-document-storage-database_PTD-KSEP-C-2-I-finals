@@ -16,7 +16,6 @@
     <!-- Marked.js for Markdown Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
-    <!-- Tailwind Custom Configuration -->
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -224,7 +223,7 @@
             <div class="bg-[#08090b] border-b border-cyber-cardBorder px-4 py-3 flex items-center justify-between">
                 <div class="flex items-center gap-3 overflow-hidden">
                     <span id="modal-tag" class="text-xs px-2 py-0.5 rounded font-bold bg-cyber-gold/20 text-cyber-gold border border-cyber-gold/30 shrink-0">
-                        HB 1
+                        DOC 1
                     </span>
                     <h3 id="modal-title" class="text-sm font-bold text-white truncate font-sans">
                         Document Title Preview
@@ -273,21 +272,20 @@
          */
         const FILE_DATABASE = [
             {
-                id: "img-pdf-addon-demo",
+                id: "doc-1-transparency",
                 code: "DOC 1",
                 title: "Transparency Document Template",
                 category: "Visual Drafts",
-                type: "image-pdf-addon",
-                pdfPath: "https://go.fliplink.me/view/28FF35D2-DEB6-43C7-9861-FBEE64067EDB",
-                filepath: "https://cdn.fliplink.me/pdfs/243165/ba5c498b~Dokumen%20Terpisah%2001.pdf",
+                type: "pdf",
+                filePath: "https://cdn.fliplink.me/pdfs/243165/ba5c498b~Dokumen%20Terpisah%2001.pdf",
                 readTime: "5 mins",
-                description: "Template dokumen transparasi",
+                description: "Template dokumen transparansi",
                 takeaways: [
                     "Tabel Kontribusi.",
                     "Penggunaan AI.",
                     "Dokumen ini dimasukkan ke dalam essai bagian lampiran (paling bawah) setelah daftar pustaka/referensi. Pastikan semua anggota kelompok mengisi, anggota yang tidak mengisi akan dikenakan minus point."
                 ]
-            },
+            }
         ];
 
         // LOCAL STORAGE STATE MANAGEMENT
@@ -332,7 +330,7 @@
         // RENDER CATEGORY PILLS
         function renderCategoryFilters() {
             const categories = ['ALL', ...new Set(FILE_DATABASE.map(f => f.category))];
-            statCategories.textContent = categories.length - 1;
+            statCategories.textContent = Math.max(0, categories.length - 1);
 
             categoryFiltersContainer.innerHTML = categories.map(cat => {
                 const isActive = activeCategory === cat;
@@ -426,7 +424,7 @@
                                     <span class="bg-[#181e2a] text-cyber-gold border border-cyber-gold/30 px-2.5 py-0.5 rounded text-xs font-bold font-mono">
                                         ${file.code}
                                     </span>
-                                    ${file.type === 'image-pdf-addon' ? `<span class="bg-cyber-gold/20 text-cyber-gold border border-cyber-gold/30 px-2 py-0.5 rounded text-[10px] font-bold">IMAGE + PDF ADDON</span>` : ''}
+                                    <span class="bg-cyber-gold/20 text-cyber-gold border border-cyber-gold/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase">${file.type}</span>
                                 </div>
                                 <span class="text-xs text-cyber-dimText font-mono">${file.readTime}</span>
                             </div>
@@ -479,50 +477,35 @@
             const file = FILE_DATABASE.find(f => f.id === id);
             if (!file) return;
 
+            const path = file.filePath || file.filepath || '';
+
             document.getElementById('modal-tag').textContent = file.code;
             document.getElementById('modal-title').textContent = file.title;
-            document.getElementById('modal-filepath').textContent = file.filePath;
+            document.getElementById('modal-filepath').textContent = path;
             
             const modalTypeBadge = document.getElementById('modal-type-badge');
-            modalTypeBadge.textContent = file.type.toUpperCase();
+            modalTypeBadge.textContent = (file.type || 'FILE').toUpperCase();
 
             const downloadBtn = document.getElementById('modal-download-btn');
-            downloadBtn.href = file.filePath;
+            downloadBtn.href = path;
 
             const modalContent = document.getElementById('modal-content');
 
-            if (file.type === 'image-pdf-addon') {
-                modalContent.innerHTML = `
-                    <div class="flex flex-col gap-4">
-                        <div class="flex items-center justify-center gap-2 border-b border-cyber-cardBorder pb-3">
-                            <button id="addon-btn-pdf" onclick="switchAddonView('pdf', '${file.pdfPath}')" class="bg-[#181e2a] hover:bg-gray-800 text-gray-300 px-3 py-1.5 rounded text-xs font-bold font-mono border border-cyber-cardBorder">
-                                📄 PDF DOCUMENT VIEW
-                            </button>
-                            <button id="addon-btn-img" onclick="switchAddonView('img', '${file.filePath}')" class="bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono">
-                                📷 IMAGE DRAFT SCHEMATIC
-                            </button>
-                        </div>
-                        <div id="addon-view-container" class="flex justify-center items-center min-h-[500px]">
-                            <img src="${file.filePath}" alt="${file.title}" class="max-w-full max-h-[65vh] rounded border border-cyber-cardBorder shadow-lg object-contain">
-                        </div>
-                    </div>
-                `;
-            }
-            else if (file.type === 'markdown') {
-                const markdownText = file.content || `# ${file.title}\n\n*File path: ${file.filePath}*\n\n${file.description}`;
+            if (file.type === 'markdown') {
+                const markdownText = file.content || `# ${file.title}\n\n*File path: ${path}*\n\n${file.description}`;
                 modalContent.innerHTML = `<div class="markdown-body max-w-4xl mx-auto py-2">${marked.parse(markdownText)}</div>`;
             } 
             else if (file.type === 'pdf') {
                 modalContent.innerHTML = `
                     <div class="w-full h-full min-h-[550px] flex flex-col">
-                        <iframe src="${file.filePath}" class="w-full h-full flex-grow rounded border border-cyber-cardBorder bg-white" frameborder="0">
-                            <p>Your browser does not support inline PDFs. <a href="${file.filePath}" target="_blank" class="text-cyber-gold underline">Click here to download PDF</a></p>
+                        <iframe src="${path}" class="w-full h-full flex-grow min-h-[550px] rounded border border-cyber-cardBorder bg-white" frameborder="0">
+                            <p>Your browser does not support inline PDFs. <a href="${path}" target="_blank" class="text-cyber-gold underline">Click here to download PDF</a></p>
                         </iframe>
                     </div>
                 `;
             }
             else if (file.type === 'code') {
-                const codeText = file.content || `// Code file at: ${file.filePath}`;
+                const codeText = file.content || `// Code file at: ${path}`;
                 modalContent.innerHTML = `
                     <div class="max-w-4xl mx-auto">
                         <pre class="text-xs font-mono text-green-400 bg-black/80 p-4 rounded border border-cyber-cardBorder overflow-x-auto"><code>${escapeHtml(codeText)}</code></pre>
@@ -532,7 +515,7 @@
             else if (file.type === 'image') {
                 modalContent.innerHTML = `
                     <div class="flex justify-center items-center h-full p-4">
-                        <img src="${file.filePath}" alt="${file.title}" class="max-w-full max-h-[70vh] rounded border border-cyber-cardBorder shadow-lg object-contain">
+                        <img src="${path}" alt="${file.title}" class="max-w-full max-h-[70vh] rounded border border-cyber-cardBorder shadow-lg object-contain">
                     </div>
                 `;
             }
@@ -540,7 +523,7 @@
                 modalContent.innerHTML = `
                     <div class="text-center py-12 text-cyber-dimText font-mono">
                         <p>PREVIEW NOT AVAILABLE FOR THIS FILE TYPE.</p>
-                        <a href="${file.filePath}" target="_blank" class="text-cyber-gold underline text-xs mt-2 inline-block">OPEN DIRECT FILE URL</a>
+                        <a href="${path}" target="_blank" class="text-cyber-gold underline text-xs mt-2 inline-block">OPEN DIRECT FILE URL</a>
                     </div>
                 `;
             }
@@ -552,24 +535,6 @@
         function closeReaderModal() {
             document.getElementById('reader-modal').classList.add('hidden');
             document.body.style.overflow = 'auto';
-        }
-
-        function switchAddonView(type, url) {
-            const container = document.getElementById('addon-view-container');
-            const btnImg = document.getElementById('addon-btn-img');
-            const btnPdf = document.getElementById('addon-btn-pdf');
-
-            if (type === 'img') {
-                btnImg.className = "bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono";
-                btnPdf.className = "bg-[#181e2a] hover:bg-gray-800 text-gray-300 px-3 py-1.5 rounded text-xs font-bold font-mono border border-cyber-cardBorder";
-                container.innerHTML = `<img src="${url}" class="max-w-full max-h-[65vh] rounded border border-cyber-cardBorder shadow-lg object-contain">`;
-            } else {
-                btnPdf.className = "bg-cyber-gold text-black px-3 py-1.5 rounded text-xs font-bold font-mono";
-                btnImg.className = "bg-[#181e2a] hover:bg-gray-800 text-gray-300 px-3 py-1.5 rounded text-xs font-bold font-mono border border-cyber-cardBorder";
-                container.innerHTML = `
-                    <iframe src="${url}" class="w-full h-[550px] rounded border border-cyber-cardBorder bg-white" frameborder="0"></iframe>
-                `;
-            }
         }
 
         // Helper function to escape HTML string for safe display
